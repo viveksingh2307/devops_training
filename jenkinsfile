@@ -14,7 +14,7 @@ pipeline {
         stage('Terraform Init') {
             steps {
                 // Initialize Terraform
-                dir ( '/var/lib/jenkins/workspace/terraform/terraform' ){
+                dir ( '/var/lib/jenkins/workspace/terraform/vivek_terrform_jenkins' ){
                 script { 
                     sh 'terraform init'
                     }
@@ -25,7 +25,7 @@ pipeline {
         stage('Terraform Apply') {
             steps {
                 // Apply Terraform changes
-                dir ('/var/lib/jenkins/workspace/terraform/terraform'){
+                dir ('/var/lib/jenkins/workspace/terraform/vivek_terrform_jenkins'){
                 script {
                     withCredentials([azureServicePrincipal(credentialsId: 'azuresp', variable: 'azuresp')]) {
                         // Set Azure credentials
