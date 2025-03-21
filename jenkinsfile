@@ -7,7 +7,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 // Checkout your Git repository
-                git url: 'https://github.com/jatinbhalla/septbatch.git'
+                git url: 'https://github.com/viveksingh2307/devops_training.git'
             }
         }
 
