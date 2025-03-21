@@ -1,32 +1,52 @@
 pipeline {
     agent any
-
-    tools {
-        // Install the Maven version configured as "M3" and add it to the path.
-        maven "M3"
+    environment {
+        MY_CRED = credentials('azuresp')
     }
-
     stages {
-        stage('Build') {
+        stage('Checkout') {
             steps {
-                // Get some code from a GitHub repository
-                git 'https://github.com/jglick/simple-maven-project-with-tests.git'
-
-                // Run Maven on a Unix agent.
-                sh "mvn -Dmaven.test.failure.ignore=true clean package"
-
-                // To run Maven on a Windows agent, use
-                // bat "mvn -Dmaven.test.failure.ignore=true clean package"
+                // Checkout your Git repository
+                git url: 'https://github.com/jatinbhalla/septbatch.git'
             }
+        }
 
-            post {
-                // If Maven was able to run the tests, even if some of the test
-                // failed, record the test results and archive the jar file.
-                success {
-                    junit '**/target/surefire-reports/TEST-*.xml'
-                    archiveArtifacts 'target/*.jar'
+        stage('Terraform Init') {
+            steps {
+                // Initialize Terraform
+                dir ( '/var/lib/jenkins/workspace/terraform/terraform' ){
+                script { 
+                    sh 'terraform init'
+                    }
                 }
             }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                // Apply Terraform changes
+                dir ('/var/lib/jenkins/workspace/terraform/terraform'){
+                script {
+                    withCredentials([azureServicePrincipal(credentialsId: 'azuresp', variable: 'azuresp')]) {
+                        // Set Azure credentials
+                        // sh 'az login --service-principal -u $MY_CRED_CLIENT_ID -p $MY_CRED_CLIENT_SECRET -t $MY_CRED_TENANT_ID'
+                        sh 'export ARM_CLIENT_ID=$MY_CRED_CLIENT_ID'
+                        sh 'export ARM_CLIENT_SECRET=$MY_CRED_CLIENT_SECRET'
+                        sh 'export ARM_SUBSCRIPTION_ID=$MY_CRED_SUBSCRIPTION_ID'
+                        sh 'export ARM_TENANT_ID=$MY_CRED_TENANT_ID'
+
+                        // Run Terraform apply
+                        sh 'sudo terraform apply -auto-approve'
+                        }
+                    }
+                }
+            }
+        }
+    }
+post {
+        success {
+            // Clean up, e.g., destroy resources (optional)
+            sh 'terraform destroy -auto-approve'
         }
     }
 }
